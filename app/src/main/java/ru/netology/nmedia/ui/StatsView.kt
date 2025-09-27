@@ -14,6 +14,7 @@ import ru.netology.nmedia.R
 import ru.netology.nmedia.util.AndroidUtils
 import kotlin.math.min
 import kotlin.random.Random
+import androidx.core.graphics.withRotation
 
 class StatsView @JvmOverloads constructor(
     context: Context,
@@ -21,7 +22,7 @@ class StatsView @JvmOverloads constructor(
     defStyleAttr: Int = 0,
     defStyleRes: Int = 0,
 ) : View(context, attrs, defStyleAttr, defStyleRes) {
-    private var drawingProgress: Float = 1.0f
+    private var rotationAngle: Float = 0f
     private var radius = 0F
     private var center = PointF(0F, 0F)
     private var oval = RectF(0F, 0F, 0F, 0F)
@@ -56,8 +57,8 @@ class StatsView @JvmOverloads constructor(
             field = value
             invalidate()
         }
-    fun setDrawingProgress(progress: Float) {
-        drawingProgress = progress.coerceIn(0.0f, 1.0f)
+    fun setRotationAngle(angle: Float) {
+        rotationAngle = angle
         invalidate()
     }
     private fun calculateProportions(): List<Float> {
@@ -83,22 +84,20 @@ class StatsView @JvmOverloads constructor(
             return
         }
         val proportions = calculateProportions()
-        var startFrom = -95F
-        var accumulateProgress = 0f
-
-        for ((index, propostion) in proportions.withIndex()) {
-            val targetAngle = 360F * propostion
-            val segmentProgress = ((drawingProgress - accumulateProgress) / propostion)
-                .coerceIn(0f, 1f)
-            if (segmentProgress > 0) {
-                val currentAngle = targetAngle * segmentProgress
+        canvas.withRotation(rotationAngle, center.x, center.y) {
+            var startFrom = -95F
+            for ((index, proportion) in proportions.withIndex()) {
+                val angle = 360F * proportion
                 paint.color = colors.getOrNull(index) ?: randomColor()
-                canvas.drawArc(oval, startFrom, currentAngle, false, paint)
+                drawArc(oval, startFrom, angle, false, paint)
+                startFrom += angle
             }
-            startFrom += targetAngle
-            accumulateProgress += propostion
-            if (drawingProgress <= accumulateProgress)
-                break
+            if (proportions.isNotEmpty()) {
+                val firstColor = colors.getOrNull(0) ?: randomColor()
+                paint.color = firstColor
+            }
+            val overlapAngle = 5F
+            drawArc(oval, -95F, overlapAngle, false, paint)
         }
         canvas.drawText(
             "%.2f%%".format(proportions.sum() * 100),
@@ -106,13 +105,12 @@ class StatsView @JvmOverloads constructor(
             center.y + textPaint.textSize / 4,
             textPaint,
         )
-
     }
-    class DrawingProgressAnimation(private  val view: StatsView) : Animation() {
+    private fun randomColor() = Random.nextInt(0xFF000000.toInt(), 0xFFFFFFFF.toInt())
+    class RotationAnimation(private val view: StatsView) : Animation() {
         override fun applyTransformation(interpolatedTime: Float, t: Transformation?) {
-            view.setDrawingProgress(interpolatedTime)
+            val angle = 360f * interpolatedTime
+            view.setRotationAngle(angle)
         }
     }
-
-    private fun randomColor() = Random.nextInt(0xFF000000.toInt(), 0xFFFFFFFF.toInt())
 }

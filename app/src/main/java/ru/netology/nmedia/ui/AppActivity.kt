@@ -21,13 +21,13 @@ class AppActivity : AppCompatActivity(R.layout.activity_app) {
             500F,
         )
         val textView = findViewById<TextView>(R.id.label)
-        val drawingAnimation = StatsView.DrawingProgressAnimation(view).apply {
-            duration = 4000
+        val rotationAnimation = StatsView.RotationAnimation(view).apply {
+            duration = 2000
             interpolator = LinearInterpolator()
         }
         val animationSet = AnimationSet(true).apply {
             addAnimation(AnimationUtils.loadAnimation(this@AppActivity, R.anim.animation))
-            addAnimation(drawingAnimation)
+            addAnimation(rotationAnimation)
         }
 
         view.startAnimation(animationSet.apply {
